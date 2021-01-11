@@ -212,6 +212,7 @@ func TestCommitPowerAndCheckInvariants(t *testing.T) {
 }
 
 func TestMigration(t *testing.T) {
+	t.Skip("slow")
 	ctx := context.Background()
 	initialBalance := big.Mul(big.NewInt(1e8), big.NewInt(1e18))
 	minerCount := 10
@@ -255,7 +256,7 @@ func TestMigration(t *testing.T) {
 
 	// Run v2 for 2000 epochs
 	var pwrSt power2.State
-	for i := 0; i < 20000; i++ {
+	for i := 0; i < 2000; i++ {
 		require.NoError(t, sim2.Tick())
 		epoch := sim2.GetVM().GetEpoch()
 		if epoch%100 == 0 {
@@ -282,7 +283,7 @@ func TestMigration(t *testing.T) {
 
 	// Migrate
 	v2 := sim2.GetVM()
-	log := nv9.TestLogger{t}
+	log := nv9.TestLogger{TB: t}
 	priorEpoch := v2.GetEpoch() - 1 // on tick sim internally creates new vm with epoch set to the next one
 	nextRoot, err := nv9.MigrateStateTree(ctx, v2.Store(), v2.StateRoot(), priorEpoch, nv9.Config{MaxWorkers: 1}, log, nv9.NewMemMigrationCache())
 	require.NoError(t, err)

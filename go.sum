@@ -24,10 +24,8 @@ github.com/filecoin-project/go-hamt-ipld/v3 v3.0.0-20201203140949-5cdbb5191437/g
 github.com/filecoin-project/go-state-types v0.0.0-20200928172055-2df22083d8ab/go.mod h1:ezYnPf0bNkTsDibL/psSz5dy4B5awOJ/E7P2Saeep8g=
 github.com/filecoin-project/go-state-types v0.0.0-20201102161440-c8033295a1fc h1:+hbMY4Pcx2oizrfH08VWXwrj5mU8aJT6g0UNxGHFCGU=
 github.com/filecoin-project/go-state-types v0.0.0-20201102161440-c8033295a1fc/go.mod h1:ezYnPf0bNkTsDibL/psSz5dy4B5awOJ/E7P2Saeep8g=
-github.com/filecoin-project/go-state-types v0.0.0-20201203022337-7cab7f0d4bfb h1:f7Y9QeUfT+hX+OOjtZ3j1e2KlGWg7ozI7W444Qa+ZJ0=
 github.com/filecoin-project/specs-actors v0.9.13 h1:rUEOQouefi9fuVY/2HOroROJlZbOzWYXXeIh41KF2M4=
 github.com/filecoin-project/specs-actors v0.9.13/go.mod h1:TS1AW/7LbG+615j4NsjMK1qlpAwaFsG9w0V2tg2gSao=
-github.com/filecoin-project/specs-actors/v2 v2.3.4 h1:NZK2oMCcA71wNsUzDBmLQyRMzcCnX9tDGvwZ53G67j8=
 github.com/filecoin-project/specs-actors/v2 v2.3.5-0.20210108193100-f326c183ed78 h1:UW3YPiez4hy+d1HUpeO+F7Hk1itsF5dNQU/I52Xz1Nc=
 github.com/filecoin-project/specs-actors/v2 v2.3.5-0.20210108193100-f326c183ed78/go.mod h1:LljnY2Mn2homxZsmokJZCpRuhOPxfXhvcek5gWkmqAc=
 github.com/gogo/protobuf v1.3.1 h1:DqDEcV5aeaTmdFBePNpYsp3FlcVH/2ISVVM9Qf8PSls=
