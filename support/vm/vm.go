@@ -423,6 +423,10 @@ func (vm *VM) GetCirculatingSupply() abi.TokenAmount {
 	return vm.circSupply
 }
 
+func (vm *VM) GetActorImpls() map[cid.Cid]rt.VMActor {
+	return vm.ActorImpls
+}
+
 // transfer debits money from one account and credits it to another.
 // avoid calling this method with a zero amount else it will perform unnecessary actor loading.
 //

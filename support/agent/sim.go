@@ -12,6 +12,8 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/filecoin-project/go-state-types/exitcode"
+	"github.com/filecoin-project/go-state-types/rt"
+	cid "github.com/ipfs/go-cid"
 	ipldcbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/pkg/errors"
 
@@ -19,6 +21,7 @@ import (
 	"github.com/filecoin-project/specs-actors/v3/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/v3/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/v3/actors/builtin/reward"
+	"github.com/filecoin-project/specs-actors/v3/actors/states"
 	"github.com/filecoin-project/specs-actors/v3/actors/util/adt"
 	"github.com/filecoin-project/specs-actors/v3/support/ipld"
 	vm "github.com/filecoin-project/specs-actors/v3/support/vm"
@@ -40,7 +43,7 @@ type Sim struct {
 	WinCount      uint64
 	MessageCount  uint64
 
-	v               *vm.VM
+	v               SimVM
 	rnd             *rand.Rand
 	statsByMethod   map[vm.MethodKey]*vm.CallStats
 	blkStore        ipldcbor.IpldBlockstore
@@ -160,14 +163,14 @@ func (s *Sim) Tick() error {
 
 		s.blkStore = nextStore
 		metrics := ipld.NewMetricsBlockStore(nextStore)
-		s.v, err = vm.NewVMAtEpoch(s.ctx, s.v.ActorImpls, adt.WrapBlockStore(s.ctx, metrics), s.v.StateRoot(), nextEpoch)
+		s.v, err = vm.NewVMAtEpoch(s.ctx, s.v.GetActorImpls(), adt.WrapBlockStore(s.ctx, metrics), s.v.StateRoot(), nextEpoch)
 		if err != nil {
 			return err
 		}
 		s.v.SetStatsSource(metrics)
 
 	} else {
-		s.v, err = s.v.WithEpoch(nextEpoch)
+		s.v, err = vm.NewVMAtEpoch(s.ctx, s.v.GetActorImpls(), s.v.Store(), s.v.StateRoot(), nextEpoch)
 	}
 
 	return err
@@ -199,7 +202,7 @@ func (s *Sim) AddDealProvider(d DealProvider) {
 	s.DealProviders = append(s.DealProviders, d)
 }
 
-func (s *Sim) GetVM() *vm.VM {
+func (s *Sim) GetVM() SimVM {
 	return s.v
 }
 
@@ -242,7 +245,7 @@ func (s *Sim) rewardMiner(addr address.Address, wins uint64) error {
 	return nil
 }
 
-func computePowerTable(v *vm.VM, agents []Agent) (powerTable, error) {
+func computePowerTable(v SimVM, agents []Agent) (powerTable, error) {
 	pt := powerTable{}
 
 	var rwst reward.State
@@ -273,7 +276,7 @@ func computePowerTable(v *vm.VM, agents []Agent) (powerTable, error) {
 	return pt, nil
 }
 
-func computeCircSupply(v *vm.VM) error {
+func computeCircSupply(v SimVM) error {
 	// disbursed + reward.State.TotalStoragePowerReward - burnt.Balance - power.State.TotalPledgeCollateral
 	var rewardSt reward.State
 	if err := v.GetState(builtin.RewardActorAddr, &rewardSt); err != nil {
@@ -356,3 +359,21 @@ type powerTable struct {
 	totalQAPower abi.StoragePower
 	minerPower   []minerPowerTable
 }
+
+// VM interface allowing a simulation to operate over multiple VM versions
+type SimVM interface {
+	ApplyMessage(from, to address.Address, value abi.TokenAmount, method abi.MethodNum, params interface{}) (cbor.Marshaler, exitcode.ExitCode)
+	GetCirculatingSupply() abi.TokenAmount
+	GetLogs() []string
+	GetState(addr address.Address, out cbor.Unmarshaler) error
+	SetStatsSource(stats vm.StatsSource)
+	GetCallStats() map[vm.MethodKey]*vm.CallStats
+	GetEpoch() abi.ChainEpoch
+	Store() adt.Store
+	GetActor(addr address.Address) (*states.Actor, bool, error)
+	SetCirculatingSupply(supply big.Int)
+	GetActorImpls() map[cid.Cid]rt.VMActor
+	StateRoot() cid.Cid
+}
+
+var _ SimVM = (*vm.VM)(nil)
