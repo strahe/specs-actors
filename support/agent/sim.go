@@ -44,6 +44,7 @@ type Sim struct {
 	MessageCount  uint64
 
 	v               SimVM
+	vmFactory       VMFactoryFunc
 	rnd             *rand.Rand
 	statsByMethod   map[vm.MethodKey]*vm.CallStats
 	blkStore        ipldcbor.IpldBlockstore
@@ -52,16 +53,41 @@ type Sim struct {
 	t               testing.TB
 }
 
+type VMFactoryFunc func(context.Context, vm.ActorImplLookup, adt.Store, cid.Cid, abi.ChainEpoch) (SimVM, error)
+
 func NewSim(ctx context.Context, t testing.TB, blockstoreFactory func() ipldcbor.IpldBlockstore, config SimConfig) *Sim {
 	blkStore := blockstoreFactory()
 	metrics := ipld.NewMetricsBlockStore(blkStore)
 	v := vm.NewVMWithSingletons(ctx, t, metrics)
+	vmFactory := func(ctx context.Context, impl vm.ActorImplLookup, store adt.Store, stateRoot cid.Cid, epoch abi.ChainEpoch) (SimVM, error) {
+		return vm.NewVMAtEpoch(ctx, impl, store, stateRoot, epoch)
+	}
 	v.SetStatsSource(metrics)
 	return &Sim{
 		Config:          config,
 		Agents:          []Agent{},
 		DealProviders:   []DealProvider{},
 		v:               v,
+		vmFactory:       vmFactory,
+		rnd:             rand.New(rand.NewSource(config.Seed)),
+		blkStore:        blkStore,
+		blkStoreFactory: blockstoreFactory,
+		ctx:             ctx,
+		t:               t,
+	}
+}
+
+func NewSimWithVM(ctx context.Context, t testing.TB, v SimVM, vmFactory VMFactoryFunc, blockstoreFactory func() ipldcbor.IpldBlockstore, config SimConfig) *Sim {
+	blkStore := blockstoreFactory()
+	metrics := ipld.NewMetricsBlockStore(blkStore)
+	v.SetStatsSource(metrics)
+
+	return &Sim{
+		Config:          config,
+		Agents:          []Agent{},
+		DealProviders:   []DealProvider{},
+		v:               v,
+		vmFactory:       vmFactory,
 		rnd:             rand.New(rand.NewSource(config.Seed)),
 		blkStore:        blkStore,
 		blkStoreFactory: blockstoreFactory,
@@ -170,7 +196,12 @@ func (s *Sim) Tick() error {
 		s.v.SetStatsSource(metrics)
 
 	} else {
+		statsSource := s.v.GetStatsSource()
 		s.v, err = vm.NewVMAtEpoch(s.ctx, s.v.GetActorImpls(), s.v.Store(), s.v.StateRoot(), nextEpoch)
+		if err != nil {
+			return err
+		}
+		s.v.SetStatsSource(statsSource)
 	}
 
 	return err
@@ -374,6 +405,7 @@ type SimVM interface {
 	SetCirculatingSupply(supply big.Int)
 	GetActorImpls() map[cid.Cid]rt.VMActor
 	StateRoot() cid.Cid
+	GetStatsSource() vm.StatsSource
 }
 
 var _ SimVM = (*vm.VM)(nil)
