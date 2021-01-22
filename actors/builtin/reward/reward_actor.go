@@ -8,6 +8,7 @@ import (
 	rtt "github.com/filecoin-project/go-state-types/rt"
 	reward0 "github.com/filecoin-project/specs-actors/actors/builtin/reward"
 	"github.com/ipfs/go-cid"
+	"time"
 
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/runtime"
@@ -44,6 +45,12 @@ func (a Actor) State() cbor.Er {
 var _ runtime.VMActor = Actor{}
 
 func (a Actor) Constructor(rt runtime.Runtime, currRealizedPower *abi.StoragePower) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 
 	if currRealizedPower == nil {
@@ -74,6 +81,12 @@ type AwardBlockRewardParams = reward0.AwardBlockRewardParams
 // The reward is reduced before the residual is credited to the block producer, by:
 // - a penalty amount, provided as a parameter, which is burnt,
 func (a Actor) AwardBlockReward(rt runtime.Runtime, params *AwardBlockRewardParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "AwardBlockReward, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 	priorBalance := rt.CurrentBalance()
 	if params.Penalty.LessThan(big.Zero()) {
@@ -158,6 +171,12 @@ func (a Actor) ThisEpochReward(rt runtime.Runtime, _ *abi.EmptyValue) *ThisEpoch
 // This is only invoked for non-empty tipsets, but catches up any number of null
 // epochs to compute the next epoch reward.
 func (a Actor) UpdateNetworkKPI(rt runtime.Runtime, currRealizedPower *abi.StoragePower) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "UpdateNetworkKPI, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.StoragePowerActorAddr)
 	if currRealizedPower == nil {
 		rt.Abortf(exitcode.ErrIllegalArgument, "arugment should not be nil")

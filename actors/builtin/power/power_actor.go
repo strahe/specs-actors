@@ -9,6 +9,7 @@ import (
 	"github.com/filecoin-project/go-state-types/network"
 	power0 "github.com/filecoin-project/specs-actors/actors/builtin/power"
 	"github.com/ipfs/go-cid"
+	"time"
 
 	rtt "github.com/filecoin-project/go-state-types/rt"
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
@@ -75,6 +76,12 @@ type MinerConstructorParams struct {
 ////////////////////////////////////////////////////////////////////////////////
 
 func (a Actor) Constructor(rt Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 
 	emptyMap, err := adt.MakeEmptyMap(adt.AsStore(rt)).Root()
@@ -103,6 +110,12 @@ type CreateMinerParams = power0.CreateMinerParams
 type CreateMinerReturn = power0.CreateMinerReturn
 
 func (a Actor) CreateMiner(rt Runtime, params *CreateMinerParams) *CreateMinerReturn {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "CreateMiner, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.CallerTypesSignable...)
 
 	ctorParams := MinerConstructorParams{
@@ -163,6 +176,12 @@ type UpdateClaimedPowerParams = power0.UpdateClaimedPowerParams
 // Adds or removes claimed power for the calling actor.
 // May only be invoked by a miner actor.
 func (a Actor) UpdateClaimedPower(rt Runtime, params *UpdateClaimedPowerParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "UpdateClaimedPower, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 	minerAddr := rt.Caller()
 	var st State
@@ -186,6 +205,12 @@ func (a Actor) UpdateClaimedPower(rt Runtime, params *UpdateClaimedPowerParams) 
 type EnrollCronEventParams = power0.EnrollCronEventParams
 
 func (a Actor) EnrollCronEvent(rt Runtime, params *EnrollCronEventParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "EnrollCronEvent, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 	minerAddr := rt.Caller()
 	minerEvent := CronEvent{
@@ -246,6 +271,12 @@ func (a Actor) OnEpochTickEnd(rt Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
 }
 
 func (a Actor) UpdatePledgeTotal(rt Runtime, pledgeDelta *abi.TokenAmount) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "UpdatePledgeTotal, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 	var st State
 	rt.StateTransaction(&st, func() {
@@ -260,6 +291,12 @@ func (a Actor) UpdatePledgeTotal(rt Runtime, pledgeDelta *abi.TokenAmount) *abi.
 const GasOnSubmitVerifySeal = 34721049
 
 func (a Actor) SubmitPoRepForBulkVerify(rt Runtime, sealInfo *proof.SealVerifyInfo) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "SubmitPoRepForBulkVerify, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 
 	minerAddr := rt.Caller()
@@ -311,6 +348,12 @@ type CurrentTotalPowerReturn struct {
 // so that this method returns consistent values while processing all messages
 // of an epoch.
 func (a Actor) CurrentTotalPower(rt Runtime, _ *abi.EmptyValue) *CurrentTotalPowerReturn {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "CurrentTotalPower, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerAcceptAny()
 	var st State
 	rt.StateReadonly(&st)

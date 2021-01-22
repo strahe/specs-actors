@@ -5,8 +5,10 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/filecoin-project/go-state-types/exitcode"
+	rtt "github.com/filecoin-project/go-state-types/rt"
 	init0 "github.com/filecoin-project/specs-actors/actors/builtin/init"
 	cid "github.com/ipfs/go-cid"
+	"time"
 
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/runtime"
@@ -43,6 +45,12 @@ var _ runtime.VMActor = Actor{}
 type ConstructorParams = init0.ConstructorParams
 
 func (a Actor) Constructor(rt runtime.Runtime, params *ConstructorParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 	emptyMap, err := adt.MakeEmptyMap(adt.AsStore(rt)).Root()
 	builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to construct state")
@@ -65,6 +73,12 @@ type ExecParams = init0.ExecParams
 type ExecReturn = init0.ExecReturn
 
 func (a Actor) Exec(rt runtime.Runtime, params *ExecParams) *ExecReturn {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Exec, took: %s", sp)
+		}
+	}()
 	rt.ValidateImmediateCallerAcceptAny()
 	callerCodeCID, ok := rt.GetActorCodeCID(rt.Caller())
 	autil.AssertMsg(ok, "no code for actor at %s", rt.Caller())

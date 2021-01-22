@@ -3,6 +3,8 @@ package multisig
 import (
 	"bytes"
 	"fmt"
+	rtt "github.com/filecoin-project/go-state-types/rt"
+	"time"
 
 	addr "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -83,6 +85,12 @@ type ConstructorParams struct {
 }
 
 func (a Actor) Constructor(rt runtime.Runtime, params *ConstructorParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.InitActorAddr)
 
 	if len(params.Signers) < 1 {
@@ -159,6 +167,12 @@ type ProposeParams = multisig0.ProposeParams
 type ProposeReturn = multisig0.ProposeReturn
 
 func (a Actor) Propose(rt runtime.Runtime, params *ProposeParams) *ProposeReturn {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Propose, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.CallerTypesSignable...)
 	proposer := rt.Caller()
 
@@ -226,6 +240,12 @@ type TxnIDParams = multisig0.TxnIDParams
 type ApproveReturn = multisig0.ApproveReturn
 
 func (a Actor) Approve(rt runtime.Runtime, params *TxnIDParams) *ApproveReturn {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Approve, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.CallerTypesSignable...)
 	callerAddr := rt.Caller()
 
@@ -259,6 +279,12 @@ func (a Actor) Approve(rt runtime.Runtime, params *TxnIDParams) *ApproveReturn {
 }
 
 func (a Actor) Cancel(rt runtime.Runtime, params *TxnIDParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Cancel, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.CallerTypesSignable...)
 	callerAddr := rt.Caller()
 
@@ -304,6 +330,12 @@ func (a Actor) Cancel(rt runtime.Runtime, params *TxnIDParams) *abi.EmptyValue {
 type AddSignerParams = multisig0.AddSignerParams
 
 func (a Actor) AddSigner(rt runtime.Runtime, params *AddSignerParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "AddSigner, took: %s", sp.String())
+		}
+	}()
 	// Can only be called by the multisig wallet itself.
 	rt.ValidateImmediateCallerIs(rt.Receiver())
 	resolvedNewSigner, err := builtin.ResolveToIDAddr(rt, params.Signer)
@@ -335,6 +367,12 @@ func (a Actor) AddSigner(rt runtime.Runtime, params *AddSignerParams) *abi.Empty
 type RemoveSignerParams = multisig0.RemoveSignerParams
 
 func (a Actor) RemoveSigner(rt runtime.Runtime, params *RemoveSignerParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "RemoveSigner, took: %s", sp.String())
+		}
+	}()
 	// Can only be called by the multisig wallet itself.
 	rt.ValidateImmediateCallerIs(rt.Receiver())
 	resolvedOldSigner, err := builtin.ResolveToIDAddr(rt, params.Signer)
@@ -390,6 +428,12 @@ func (a Actor) RemoveSigner(rt runtime.Runtime, params *RemoveSignerParams) *abi
 type SwapSignerParams = multisig0.SwapSignerParams
 
 func (a Actor) SwapSigner(rt runtime.Runtime, params *SwapSignerParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "SwapSigner, took: %s", sp.String())
+		}
+	}()
 	// Can only be called by the multisig wallet itself.
 	rt.ValidateImmediateCallerIs(rt.Receiver())
 
@@ -434,6 +478,12 @@ func (a Actor) SwapSigner(rt runtime.Runtime, params *SwapSignerParams) *abi.Emp
 type ChangeNumApprovalsThresholdParams = multisig0.ChangeNumApprovalsThresholdParams
 
 func (a Actor) ChangeNumApprovalsThreshold(rt runtime.Runtime, params *ChangeNumApprovalsThresholdParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ChangeNumApprovalsThreshold, took: %s", sp.String())
+		}
+	}()
 	// Can only be called by the multisig wallet itself.
 	rt.ValidateImmediateCallerIs(rt.Receiver())
 
@@ -456,6 +506,12 @@ func (a Actor) ChangeNumApprovalsThreshold(rt runtime.Runtime, params *ChangeNum
 type LockBalanceParams = multisig0.LockBalanceParams
 
 func (a Actor) LockBalance(rt runtime.Runtime, params *LockBalanceParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "LockBalance, took: %s", sp.String())
+		}
+	}()
 	// Can only be called by the multisig wallet itself.
 	rt.ValidateImmediateCallerIs(rt.Receiver())
 

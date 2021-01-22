@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"time"
 
 	addr "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
@@ -94,6 +95,12 @@ var _ runtime.VMActor = Actor{}
 type ConstructorParams = power.MinerConstructorParams
 
 func (a Actor) Constructor(rt Runtime, params *ConstructorParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.InitActorAddr)
 
 	checkControlAddresses(rt, params.ControlAddrs)
@@ -168,6 +175,12 @@ type GetControlAddressesReturn struct {
 }
 
 func (a Actor) ControlAddresses(rt Runtime, _ *abi.EmptyValue) *GetControlAddressesReturn {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ControlAddresses, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerAcceptAny()
 	var st State
 	rt.StateReadonly(&st)
@@ -189,6 +202,12 @@ type ChangeWorkerAddressParams = miner0.ChangeWorkerAddressParams
 // If a nil addresses slice is passed, the control addresses will be cleared.
 // A worker change will be scheduled if the worker passed in the params is different from the existing worker.
 func (a Actor) ChangeWorkerAddress(rt Runtime, params *ChangeWorkerAddressParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ChangeWorkerAddress, took: %s", sp.String())
+		}
+	}()
 	checkControlAddresses(rt, params.NewControlAddrs)
 
 	newWorker := resolveWorkerAddress(rt, params.NewWorker)
@@ -226,6 +245,12 @@ func (a Actor) ChangeWorkerAddress(rt Runtime, params *ChangeWorkerAddressParams
 
 // Triggers a worker address change if a change has been requested and its effective epoch has arrived.
 func (a Actor) ConfirmUpdateWorkerKey(rt Runtime, params *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ConfirmUpdateWorkerKey, took: %s", sp.String())
+		}
+	}()
 	var st State
 	rt.StateTransaction(&st, func() {
 		info := getMinerInfo(rt, &st)
@@ -245,6 +270,12 @@ func (a Actor) ConfirmUpdateWorkerKey(rt Runtime, params *abi.EmptyValue) *abi.E
 // If invoked by the previously proposed address, with the same proposal, changes the current owner address to be
 // that proposed address.
 func (a Actor) ChangeOwnerAddress(rt Runtime, newAddress *addr.Address) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ChangeOwnerAddress, took: %s", sp.String())
+		}
+	}()
 	if newAddress.Empty() {
 		rt.Abortf(exitcode.ErrIllegalArgument, "empty address")
 	}
@@ -286,6 +317,12 @@ func (a Actor) ChangeOwnerAddress(rt Runtime, newAddress *addr.Address) *abi.Emp
 type ChangePeerIDParams = miner0.ChangePeerIDParams
 
 func (a Actor) ChangePeerID(rt Runtime, params *ChangePeerIDParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ChangePeerID, took: %s", sp.String())
+		}
+	}()
 	checkPeerInfo(rt, params.NewID, nil)
 
 	var st State
@@ -307,6 +344,12 @@ func (a Actor) ChangePeerID(rt Runtime, params *ChangePeerIDParams) *abi.EmptyVa
 type ChangeMultiaddrsParams = miner0.ChangeMultiaddrsParams
 
 func (a Actor) ChangeMultiaddrs(rt Runtime, params *ChangeMultiaddrsParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ChangeMultiaddrs, took: %s", sp.String())
+		}
+	}()
 	checkPeerInfo(rt, nil, params.NewMultiaddrs)
 
 	var st State
@@ -354,6 +397,12 @@ type SubmitWindowedPoStParams = miner0.SubmitWindowedPoStParams
 
 // Invoked by miner's worker address to submit their fallback post
 func (a Actor) SubmitWindowedPoSt(rt Runtime, params *SubmitWindowedPoStParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "SubmitWindowedPoSt, took: %s", sp.String())
+		}
+	}()
 	currEpoch := rt.CurrEpoch()
 	nv := rt.NetworkVersion()
 	store := adt.AsStore(rt)
@@ -528,6 +577,12 @@ type PreCommitSectorParams = miner0.SectorPreCommitInfo
 // Proposals must be posted on chain via sma.PublishStorageDeals before PreCommitSector.
 // Optimization: PreCommitSector could contain a list of deals that are not published yet.
 func (a Actor) PreCommitSector(rt Runtime, params *PreCommitSectorParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "PreCommitSector, took: %s", sp.String())
+		}
+	}()
 	nv := rt.NetworkVersion()
 	if !CanPreCommitSealProof(params.SealProof, nv) {
 		rt.Abortf(exitcode.ErrIllegalArgument, "unsupported seal proof type %v at network version %v", params.SealProof, nv)
@@ -699,6 +754,12 @@ type ProveCommitSectorParams = miner0.ProveCommitSectorParams
 // by the power actor.
 // If valid, the power actor will call ConfirmSectorProofsValid at the end of the same epoch as this message.
 func (a Actor) ProveCommitSector(rt Runtime, params *ProveCommitSectorParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "PreCommitSector, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerAcceptAny()
 	nv := rt.NetworkVersion()
 
@@ -760,6 +821,12 @@ func (a Actor) ProveCommitSector(rt Runtime, params *ProveCommitSectorParams) *a
 }
 
 func (a Actor) ConfirmSectorProofsValid(rt Runtime, params *builtin.ConfirmSectorProofsParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ConfirmSectorProofsValid, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.StoragePowerActorAddr)
 
 	// This should be enforced by the power actor. We log here just in case
@@ -947,6 +1014,12 @@ func (a Actor) ConfirmSectorProofsValid(rt Runtime, params *builtin.ConfirmSecto
 type CheckSectorProvenParams = miner0.CheckSectorProvenParams
 
 func (a Actor) CheckSectorProven(rt Runtime, params *CheckSectorProvenParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "CheckSectorProven, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerAcceptAny()
 
 	if params.SectorNumber > abi.MaxSectorNumber {
@@ -987,6 +1060,12 @@ type ExpirationExtension = miner0.ExpirationExtension
 // The sector must not be terminated or faulty.
 // The sector's power is recomputed for the new expiration.
 func (a Actor) ExtendSectorExpiration(rt Runtime, params *ExtendSectorExpirationParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ExtendSectorExpiration, took: %s", sp.String())
+		}
+	}()
 	nv := rt.NetworkVersion()
 	if uint64(len(params.Extensions)) > DeclarationsMax {
 		rt.Abortf(exitcode.ErrIllegalArgument, "too many declarations %d, max %d", len(params.Extensions), DeclarationsMax)
@@ -1197,7 +1276,12 @@ type TerminateSectorsReturn = miner0.TerminateSectorsReturn
 func (a Actor) TerminateSectors(rt Runtime, params *TerminateSectorsParams) *TerminateSectorsReturn {
 	// Note: this cannot terminate pre-committed but un-proven sectors.
 	// They must be allowed to expire (and deposit burnt).
-
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "TerminateSectors, took: %s", sp.String())
+		}
+	}()
 	if len(params.Terminations) > DeclarationsMax {
 		rt.Abortf(exitcode.ErrIllegalArgument,
 			"too many declarations when terminating sectors: %d > %d",
@@ -1294,6 +1378,12 @@ type DeclareFaultsParams = miner0.DeclareFaultsParams
 type FaultDeclaration = miner0.FaultDeclaration
 
 func (a Actor) DeclareFaults(rt Runtime, params *DeclareFaultsParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "DeclareFaults, took: %s", sp.String())
+		}
+	}()
 	if len(params.Faults) > DeclarationsMax {
 		rt.Abortf(exitcode.ErrIllegalArgument,
 			"too many fault declarations for a single message: %d > %d",
@@ -1376,6 +1466,12 @@ type DeclareFaultsRecoveredParams = miner0.DeclareFaultsRecoveredParams
 type RecoveryDeclaration = miner0.RecoveryDeclaration
 
 func (a Actor) DeclareFaultsRecovered(rt Runtime, params *DeclareFaultsRecoveredParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "DeclareFaultsRecovered, took: %s", sp.String())
+		}
+	}()
 	if len(params.Recoveries) > DeclarationsMax {
 		rt.Abortf(exitcode.ErrIllegalArgument,
 			"too many recovery declarations for a single message: %d > %d",
@@ -1461,6 +1557,12 @@ type CompactPartitionsParams = miner0.CompactPartitionsParams
 // Removed sectors are removed from state entirely.
 // May not be invoked if the deadline has any un-processed early terminations.
 func (a Actor) CompactPartitions(rt Runtime, params *CompactPartitionsParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "CompactPartitions, took: %s", sp.String())
+		}
+	}()
 	if params.Deadline >= WPoStPeriodDeadlines {
 		rt.Abortf(exitcode.ErrIllegalArgument, "invalid deadline %v", params.Deadline)
 	}
@@ -1531,6 +1633,12 @@ type CompactSectorNumbersParams = miner0.CompactSectorNumbersParams
 // For example, if sectors 1-99 and 101-200 have been allocated, sector number
 // 99 can be masked out to collapse these two ranges into one.
 func (a Actor) CompactSectorNumbers(rt Runtime, params *CompactSectorNumbersParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "CompactSectorNumbers, took: %s", sp.String())
+		}
+	}()
 	lastSectorNo, err := params.MaskSectorNumbers.Last()
 	builtin.RequireNoErr(rt, err, exitcode.ErrIllegalArgument, "invalid mask bitfield")
 	if lastSectorNo > abi.MaxSectorNumber {
@@ -1556,6 +1664,12 @@ func (a Actor) CompactSectorNumbers(rt Runtime, params *CompactSectorNumbersPara
 
 // Locks up some amount of the miner's unlocked balance (including funds received alongside the invoking message).
 func (a Actor) ApplyRewards(rt Runtime, params *builtin.ApplyRewardParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ApplyRewards, took: %s", sp.String())
+		}
+	}()
 	if params.Reward.Sign() < 0 {
 		rt.Abortf(exitcode.ErrIllegalArgument, "cannot lock up a negative amount of funds")
 	}
@@ -1613,6 +1727,12 @@ func (a Actor) ApplyRewards(rt Runtime, params *builtin.ApplyRewardParams) *abi.
 type ReportConsensusFaultParams = miner0.ReportConsensusFaultParams
 
 func (a Actor) ReportConsensusFault(rt Runtime, params *ReportConsensusFaultParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ReportConsensusFault, took: %s", sp.String())
+		}
+	}()
 	// Note: only the first reporter of any fault is rewarded.
 	// Subsequent invocations fail because the target miner has been removed.
 	rt.ValidateImmediateCallerType(builtin.CallerTypesSignable...)
@@ -1689,6 +1809,12 @@ func (a Actor) ReportConsensusFault(rt Runtime, params *ReportConsensusFaultPara
 type WithdrawBalanceParams = miner0.WithdrawBalanceParams
 
 func (a Actor) WithdrawBalance(rt Runtime, params *WithdrawBalanceParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "WithdrawBalance, took: %s", sp.String())
+		}
+	}()
 	var st State
 	if params.AmountRequested.LessThan(big.Zero()) {
 		rt.Abortf(exitcode.ErrIllegalArgument, "negative fund requested for withdrawal: %s", params.AmountRequested)
@@ -1751,6 +1877,12 @@ func (a Actor) WithdrawBalance(rt Runtime, params *WithdrawBalanceParams) *abi.E
 }
 
 func (a Actor) RepayDebt(rt Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "RepayDebt, took: %s", sp.String())
+		}
+	}()
 	var st State
 	var fromVesting, fromBalance abi.TokenAmount
 	rt.StateTransaction(&st, func() {

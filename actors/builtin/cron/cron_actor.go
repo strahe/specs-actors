@@ -3,8 +3,10 @@ package cron
 import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
+	rtt "github.com/filecoin-project/go-state-types/rt"
 	cron0 "github.com/filecoin-project/specs-actors/actors/builtin/cron"
 	"github.com/ipfs/go-cid"
+	"time"
 
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/runtime"
@@ -42,6 +44,12 @@ type ConstructorParams = cron0.ConstructorParams
 type EntryParam = cron0.Entry
 
 func (a Actor) Constructor(rt runtime.Runtime, params *ConstructorParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 	entries := make([]Entry, len(params.Entries))
 	for i, e := range params.Entries {
@@ -53,6 +61,12 @@ func (a Actor) Constructor(rt runtime.Runtime, params *ConstructorParams) *abi.E
 
 // Invoked by the system after all other messages in the epoch have been processed.
 func (a Actor) EpochTick(rt runtime.Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "EpochTick, took: %s", sp)
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 
 	var st State

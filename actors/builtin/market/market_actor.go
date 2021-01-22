@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"sort"
+	"time"
 
 	addr "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -63,6 +64,12 @@ var _ runtime.VMActor = Actor{}
 ////////////////////////////////////////////////////////////////////////////////
 
 func (a Actor) Constructor(rt Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 
 	emptyArray, err := adt.MakeEmptyArray(adt.AsStore(rt)).Root()
@@ -88,6 +95,12 @@ type WithdrawBalanceParams = market0.WithdrawBalanceParams
 // Attempt to withdraw the specified amount from the balance held in escrow.
 // If less than the specified amount is available, yields the entire available balance.
 func (a Actor) WithdrawBalance(rt Runtime, params *WithdrawBalanceParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "WithdrawBalance, took: %s", sp.String())
+		}
+	}()
 	if params.Amount.LessThan(big.Zero()) {
 		rt.Abortf(exitcode.ErrIllegalArgument, "negative amount %v", params.Amount)
 	}
@@ -126,6 +139,12 @@ func (a Actor) WithdrawBalance(rt Runtime, params *WithdrawBalanceParams) *abi.E
 
 // Deposits the received value into the balance held in escrow.
 func (a Actor) AddBalance(rt Runtime, providerOrClientAddress *addr.Address) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "AddBalance, took: %s", sp.String())
+		}
+	}()
 	msgValue := rt.ValueReceived()
 	builtin.RequireParam(rt, msgValue.GreaterThan(big.Zero()), "balance to add must be greater than zero")
 
@@ -162,6 +181,12 @@ type PublishStorageDealsReturn = market0.PublishStorageDealsReturn
 // Publish a new set of storage deals (not yet included in a sector).
 func (a Actor) PublishStorageDeals(rt Runtime, params *PublishStorageDealsParams) *PublishStorageDealsReturn {
 
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "PublishStorageDeals, took: %s", sp.String())
+		}
+	}()
 	// Deal message must have a From field identical to the provider of all the deals.
 	// This allows us to retain and verify only the client's signature in each deal proposal itself.
 	rt.ValidateImmediateCallerType(builtin.CallerTypesSignable...)
@@ -295,6 +320,12 @@ type VerifyDealsForActivationReturn struct {
 // and return DealWeight of the set of storage deals given.
 // The weight is defined as the sum, over all deals in the set, of the product of deal size and duration.
 func (A Actor) VerifyDealsForActivation(rt Runtime, params *VerifyDealsForActivationParams) *VerifyDealsForActivationReturn {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "VerifyDealsForActivation, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 	minerAddr := rt.Caller()
 
@@ -321,6 +352,12 @@ type ActivateDealsParams = market0.ActivateDealsParams
 // Verify that a given set of storage deals is valid for a sector currently being ProveCommitted,
 // update the market's internal state accordingly.
 func (a Actor) ActivateDeals(rt Runtime, params *ActivateDealsParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ActivateDeals, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 	minerAddr := rt.Caller()
 	currEpoch := rt.CurrEpoch()
@@ -381,6 +418,12 @@ func (a Actor) ActivateDeals(rt Runtime, params *ActivateDealsParams) *abi.Empty
 type ComputeDataCommitmentParams = market0.ComputeDataCommitmentParams
 
 func (a Actor) ComputeDataCommitment(rt Runtime, params *ComputeDataCommitmentParams) *cbg.CborCid {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "ComputeDataCommitment, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 
 	var st State
@@ -417,6 +460,12 @@ type OnMinerSectorsTerminateParams = market0.OnMinerSectorsTerminateParams
 // Slash provider collateral, refund client collateral, and refund partial unpaid escrow
 // amount to client.
 func (a Actor) OnMinerSectorsTerminate(rt Runtime, params *OnMinerSectorsTerminateParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "OnMinerSectorsTerminate, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerType(builtin.StorageMinerActorCodeID)
 	minerAddr := rt.Caller()
 
@@ -468,6 +517,12 @@ func (a Actor) OnMinerSectorsTerminate(rt Runtime, params *OnMinerSectorsTermina
 }
 
 func (a Actor) CronTick(rt Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "CronTick, took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.CronActorAddr)
 	amountSlashed := big.Zero()
 

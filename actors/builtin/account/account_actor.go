@@ -5,7 +5,9 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/filecoin-project/go-state-types/exitcode"
+	rtt "github.com/filecoin-project/go-state-types/rt"
 	"github.com/ipfs/go-cid"
+	"time"
 
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v2/actors/runtime"
@@ -37,6 +39,12 @@ type State struct {
 func (a Actor) Constructor(rt runtime.Runtime, address *addr.Address) *abi.EmptyValue {
 	// Account actors are created implicitly by sending a message to a pubkey-style address.
 	// This constructor is not invoked by the InitActor, but by the system.
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor: address: %s, took: %s", address.String(), sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerIs(builtin.SystemActorAddr)
 	switch address.Protocol() {
 	case addr.SECP256K1:
@@ -52,6 +60,12 @@ func (a Actor) Constructor(rt runtime.Runtime, address *addr.Address) *abi.Empty
 
 // Fetches the pubkey-type address from this actor.
 func (a Actor) PubkeyAddress(rt runtime.Runtime, _ *abi.EmptyValue) *addr.Address {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "PubkeyAddress: took: %s", sp.String())
+		}
+	}()
 	rt.ValidateImmediateCallerAcceptAny()
 	var st State
 	rt.StateReadonly(&st)

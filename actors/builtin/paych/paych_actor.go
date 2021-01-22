@@ -2,6 +2,8 @@ package paych
 
 import (
 	"bytes"
+	rtt "github.com/filecoin-project/go-state-types/rt"
+	"time"
 
 	addr "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -49,6 +51,12 @@ type ConstructorParams = paych0.ConstructorParams
 
 // Constructor creates a payment channel actor. See State for meaning of params.
 func (pca *Actor) Constructor(rt runtime.Runtime, params *ConstructorParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Constructor, took: %s", sp.String())
+		}
+	}()
 	// Only InitActor can create a payment channel actor. It creates the actor on
 	// behalf of the payer/payee.
 	rt.ValidateImmediateCallerType(builtin.InitActorCodeID)
@@ -148,6 +156,12 @@ type ModVerifyParams = paych0.ModVerifyParams
 type Merge = paych0.Merge
 
 func (pca Actor) UpdateChannelState(rt runtime.Runtime, params *UpdateChannelStateParams) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "UpdateChannelState, took: %s", sp.String())
+		}
+	}()
 	var st State
 	rt.StateReadonly(&st)
 
@@ -308,6 +322,12 @@ func (pca Actor) UpdateChannelState(rt runtime.Runtime, params *UpdateChannelSta
 }
 
 func (pca Actor) Settle(rt runtime.Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Settle, took: %s", sp.String())
+		}
+	}()
 	var st State
 	rt.StateTransaction(&st, func() {
 		rt.ValidateImmediateCallerIs(st.From, st.To)
@@ -325,6 +345,12 @@ func (pca Actor) Settle(rt runtime.Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
 }
 
 func (pca Actor) Collect(rt runtime.Runtime, _ *abi.EmptyValue) *abi.EmptyValue {
+	start := time.Now()
+	defer func() {
+		if sp := time.Since(start); sp.Seconds() > 1 {
+			rt.Log(rtt.WARN, "Collect, took: %s", sp.String())
+		}
+	}()
 	var st State
 	rt.StateReadonly(&st)
 	rt.ValidateImmediateCallerIs(st.From, st.To)
