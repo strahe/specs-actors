@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime/debug"
+	"time"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -542,6 +543,13 @@ func (ic *invocationContext) invoke() (ret returnWrapper, errcode exitcode.ExitC
 		panic(err)
 	}
 
+	start := time.Now()
+	defer func() {
+		if v := time.Since(start); v.Seconds() > 1 {
+			ic.rt.Log(rt.WARN, "invoke: took, %s, len: %d", v.String())
+		}
+	}()
+
 	ic.rt.startInvocation(&ic.msg)
 
 	// Install handler for abort, which rolls back all state changes from this and any nested invocations.
@@ -803,6 +811,12 @@ func (ic *invocationContext) replace(obj cbor.Marshaler) cid.Cid {
 
 // Checks that state objects weren't modified outside of transaction.
 func (ic *invocationContext) checkStateObjectsUnmodified() {
+	start := time.Now()
+	defer func() {
+		if v := time.Since(start); v.Seconds() > 1 {
+			ic.rt.Log(rt.WARN, "checkStateObjectsUnmodified: took, %s, len: %d", v.String(), len(ic.stateUsedObjs))
+		}
+	}()
 	for obj, expectedKey := range ic.stateUsedObjs { // nolint:nomaprange
 		// Recompute the CID of the object and check it's the same as was recorded
 		// when the object was loaded.
